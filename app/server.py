@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from fastapi import Depends, FastAPI, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, Depends, FastAPI, File, UploadFile, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -24,6 +24,8 @@ origins = [
     "http://localhost:4321",
 ]
 
+prefix_router = APIRouter(prefix="/server")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -36,7 +38,7 @@ app.add_middleware(
 app_model = model.AppCore()
 
 
-@app.post("/upload")
+@prefix_router.post("/upload")
 async def upload_excel(file: UploadFile = File(...)):
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -69,7 +71,7 @@ async def upload_excel(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
 
-@app.get("/document/list", tags=["document"])
+@prefix_router.get("/document/list", tags=["document"])
 async def list_documents(
     # current_user: Annotated[User, Depends(get_current_active_user)],
 ):
@@ -88,7 +90,7 @@ async def list_documents(
         raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")
 
 
-@app.get("/document", tags=["document"])
+@prefix_router.get("/document", tags=["document"])
 async def get_document(filename: str):
     if not filename or not filename.endswith((".xlsx", ".xls")):
         raise HTTPException(
@@ -138,7 +140,7 @@ async def get_document(filename: str):
         raise HTTPException(status_code=500, detail=f"Error getting file: {str(e)}")
 
 
-@app.post("/document", tags=["document"])
+@prefix_router.post("/document", tags=["document"])
 async def upload_document(file: UploadFile = File(...)):
 
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -174,7 +176,7 @@ async def upload_document(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
 
-@app.post("/document/rename", tags=["document"])
+@prefix_router.post("/document/rename", tags=["document"])
 async def rename_document(old_name: str, new_name: str):
 
     if (
@@ -203,7 +205,7 @@ async def rename_document(old_name: str, new_name: str):
         raise HTTPException(status_code=500, detail=f"Error renaming file: {str(e)}")
 
 
-@app.delete("/document", tags=["document"])
+@prefix_router.delete("/document", tags=["document"])
 async def delete_document(filename: str):
     if not filename or not filename.endswith((".xlsx", ".xls")):
         raise HTTPException(
@@ -228,7 +230,7 @@ async def delete_document(filename: str):
 
 """unused endpoint"""
 """
-@app.post("/filter")
+@prefix_router.post("/filter")
 async def filter_report(date_from: datetime, date_to: datetime, categories: list[str]):
 
     if not app_model.spending_table:
@@ -247,7 +249,7 @@ async def filter_report(date_from: datetime, date_to: datetime, categories: list
 """
 
 
-@app.post("/token")
+@prefix_router.post("/token")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
@@ -265,21 +267,21 @@ async def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@app.get("/users/me/", response_model=User)
+@prefix_router.get("/users/me/", response_model=User)
 async def read_users_me(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return current_user
 
 
-@app.get("/users/me/items/")
+@prefix_router.get("/users/me/items/")
 async def read_own_items(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
 
-@app.put("/entries/{workbook_name}", tags=["entries"])
+@prefix_router.put("/entries/{workbook_name}", tags=["entries"])
 def edit_entry(
     workbook_name: str,
     old_entry_date: datetime,
@@ -302,7 +304,7 @@ def edit_entry(
         raise HTTPException(status_code=500, detail=f"Error editing entry: {str(e)}")
 
 
-@app.post("/entries/{workbook_name}", tags=["entries"])
+@prefix_router.post("/entries/{workbook_name}", tags=["entries"])
 def create_entry(
     workbook_name: str,
     entry: model.SpendingEntry,
@@ -322,7 +324,7 @@ def create_entry(
         raise HTTPException(status_code=500, detail=f"Error creating entry: {str(e)}")
 
 
-@app.delete("/entries/{workbook_name}", tags=["entries"])
+@prefix_router.delete("/entries/{workbook_name}", tags=["entries"])
 def delete_entry(workbook_name: str, entry_date: datetime, entry_category: str):
     try:
         if workbook_name not in app_model.spending_tables:
@@ -339,6 +341,8 @@ def delete_entry(workbook_name: str, entry_date: datetime, entry_category: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting entry: {str(e)}")
 
+
+app.include_router(prefix_router)
 
 # Run the app with: uvicorn filename:app --reload
 # Create the requirements.txt file with: pip freeze > requirements.txt
