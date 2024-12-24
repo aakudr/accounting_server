@@ -1,0 +1,4 @@
+[tool.pyright]
+include = ["workbooks", "workbooks.core", "workbooks.model"]
+venvPath = "/home/user/dev/accounting/server"
+venv = "server"
