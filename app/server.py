@@ -20,8 +20,8 @@ from typing import Annotated
 
 app = FastAPI()
 origins = [
-    "http://localhost",
     "http://localhost:4321",
+    "https://2ym2-7i13-9ujg.gw-1a.dockhost.net:8080",
 ]
 
 prefix_router = APIRouter(prefix="/server")
