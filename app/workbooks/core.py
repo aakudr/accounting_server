@@ -66,20 +66,22 @@ def build_spending_table_from_results(results, sheet: Worksheet):
                     continue
 
             print(sheet)
-            entry = SpendingEntry()
 
             # entry.category = header_row_2[col_i].value or header_row[col_i].value
             level1category = getMergedCellVal(sheet, header_row[col_i]) or ""
             level2category = getMergedCellVal(sheet, header_row_2[col_i]) or ""
-
-            entry.category = (
+            aggregated_category = (
                 f"{level1category} ({level2category})"
                 if isinstance(level2category, str)
                 and len(level2category) > 0
                 and str(level2category) != str(level1category)
                 else str(level1category)
             )
-            entry.price = cell.value
+
+            price = cell.value
+
+            entry = SpendingEntry(category=aggregated_category, price=price)
+
             if cell.comment:
                 entry.comment = cell.comment.text
 
@@ -94,7 +96,3 @@ def build_spending_table_from_results(results, sheet: Worksheet):
 
     print(len(spending_table.entries))
     return spending_table
-
-
-
-
